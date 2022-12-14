@@ -203,8 +203,9 @@ public final class StandardRoutingEngine implements RoutingEngine {
         }
         Collection<String> result = new LinkedHashSet<>(shardingRule.getDatabaseShardingStrategy(tableRule).doSharding(tableRule.getActualDatasourceNames(), databaseShardingValues));
         Preconditions.checkState(!result.isEmpty(), "no database route info");
-        Preconditions.checkState(tableRule.getActualDatasourceNames().containsAll(result), 
-                "Some routed data sources do not belong to configured data sources. routed data sources: `%s`, configured data sources: `%s`", result, tableRule.getActualDatasourceNames());
+        //Preconditions.checkState(tableRule.getActualDatasourceNames().containsAll(result),
+        //        "Some routed data sources do not belong to configured data sources. routed data sources: `%s`, " +
+        //        "configured data sources: `%s`", result, tableRule.getActualDatasourceNames());
         return result;
     }
     

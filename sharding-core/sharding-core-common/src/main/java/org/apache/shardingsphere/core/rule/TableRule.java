@@ -216,8 +216,12 @@ public final class TableRule {
      */
     public Collection<String> getActualTableNames(final String targetDataSource) {
         Collection<String> result = datasourceToTablesMap.get(targetDataSource);
+
         if (null == result) {
-            result = Collections.emptySet();
+            result = datasourceToTablesMap.get("default");
+            if (null == result) {
+                result = Collections.emptySet();
+            }
         }
         return result;
     }
