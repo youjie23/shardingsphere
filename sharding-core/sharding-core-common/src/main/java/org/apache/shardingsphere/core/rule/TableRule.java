@@ -67,7 +67,9 @@ public final class TableRule {
     private final ShardingStrategy tableShardingStrategy;
     
     private final String generateKeyColumn;
-    
+
+    private final String defaultDataSourceName;
+
     private final ShardingKeyGenerator shardingKeyGenerator;
     
     private final Collection<String> actualDatasourceNames = new LinkedHashSet<>();
@@ -84,6 +86,7 @@ public final class TableRule {
         tableShardingStrategy = null;
         generateKeyColumn = null;
         shardingKeyGenerator = null;
+        this.defaultDataSourceName = defaultDataSourceName;
     }
     
     public TableRule(final Collection<String> dataSourceNames, final String logicTableName) {
@@ -95,6 +98,7 @@ public final class TableRule {
         tableShardingStrategy = null;
         generateKeyColumn = null;
         shardingKeyGenerator = null;
+        defaultDataSourceName = dataSourceNames.iterator().next();
     }
     
     public TableRule(final TableRuleConfiguration tableRuleConfig, final ShardingDataSourceNames shardingDataSourceNames, final String defaultGenerateKeyColumn) {
@@ -109,6 +113,7 @@ public final class TableRule {
         generateKeyColumn = getGenerateKeyColumn(tableRuleConfig.getKeyGeneratorConfig(), defaultGenerateKeyColumn);
         shardingKeyGenerator = containsKeyGeneratorConfiguration(tableRuleConfig)
                 ? new ShardingKeyGeneratorServiceLoader().newService(tableRuleConfig.getKeyGeneratorConfig().getType(), tableRuleConfig.getKeyGeneratorConfig().getProperties()) : null;
+        defaultDataSourceName = shardingDataSourceNames.getDefaultDataSourceName();
         checkRule(dataNodes);
     }
     
@@ -218,7 +223,9 @@ public final class TableRule {
         Collection<String> result = datasourceToTablesMap.get(targetDataSource);
 
         if (null == result) {
-            result = datasourceToTablesMap.get("default");
+            if (defaultDataSourceName != null) {
+                result = datasourceToTablesMap.get(defaultDataSourceName);
+            }
             if (null == result) {
                 result = Collections.emptySet();
             }
