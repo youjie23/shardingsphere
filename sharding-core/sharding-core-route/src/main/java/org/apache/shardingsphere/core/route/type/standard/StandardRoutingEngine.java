@@ -22,11 +22,6 @@ import com.google.common.base.Preconditions;
 import lombok.RequiredArgsConstructor;
 import org.apache.shardingsphere.api.hint.HintManager;
 import org.apache.shardingsphere.core.exception.ShardingException;
-import org.apache.shardingsphere.sql.parser.relation.statement.SQLStatementContext;
-import org.apache.shardingsphere.sql.parser.sql.statement.SQLStatement;
-import org.apache.shardingsphere.sql.parser.sql.statement.dml.DeleteStatement;
-import org.apache.shardingsphere.sql.parser.sql.statement.dml.InsertStatement;
-import org.apache.shardingsphere.sql.parser.sql.statement.dml.UpdateStatement;
 import org.apache.shardingsphere.core.route.router.sharding.condition.ShardingCondition;
 import org.apache.shardingsphere.core.route.router.sharding.condition.ShardingConditions;
 import org.apache.shardingsphere.core.route.type.RoutingEngine;
@@ -41,6 +36,11 @@ import org.apache.shardingsphere.core.strategy.route.ShardingStrategy;
 import org.apache.shardingsphere.core.strategy.route.hint.HintShardingStrategy;
 import org.apache.shardingsphere.core.strategy.route.value.ListRouteValue;
 import org.apache.shardingsphere.core.strategy.route.value.RouteValue;
+import org.apache.shardingsphere.sql.parser.relation.statement.SQLStatementContext;
+import org.apache.shardingsphere.sql.parser.sql.statement.SQLStatement;
+import org.apache.shardingsphere.sql.parser.sql.statement.dml.DeleteStatement;
+import org.apache.shardingsphere.sql.parser.sql.statement.dml.InsertStatement;
+import org.apache.shardingsphere.sql.parser.sql.statement.dml.UpdateStatement;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -198,7 +198,16 @@ public final class StandardRoutingEngine implements RoutingEngine {
     }
     
     private Collection<String> routeDataSources(final TableRule tableRule, final List<RouteValue> databaseShardingValues) {
+        if (isDMLForModify(sqlStatementContext.getSqlStatement())) {
+            String checkShardingValuesNotEmpty = System.getProperty("sharding.database.dml.check.shardingvalues.notempty");
+            if (checkShardingValuesNotEmpty != null && ("all".equals(checkShardingValuesNotEmpty) || ("," + checkShardingValuesNotEmpty + ",").contains(tableRule.getLogicTable()))) {
+                Preconditions.checkState(!databaseShardingValues.isEmpty(),
+                        "sharding.database.dml.check.shardingvalues.notempty:%s",
+                        sqlStatementContext.getTablesContext().getSingleTableName());
+            }
+        }
         if (databaseShardingValues.isEmpty()) {
+
             return tableRule.getActualDatasourceNames();
         }
         Collection<String> result = new LinkedHashSet<>(shardingRule.getDatabaseShardingStrategy(tableRule).doSharding(tableRule.getActualDatasourceNames(), databaseShardingValues));
