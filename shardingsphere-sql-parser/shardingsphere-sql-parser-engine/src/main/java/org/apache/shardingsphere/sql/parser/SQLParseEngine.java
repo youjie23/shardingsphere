@@ -24,6 +24,8 @@ import org.apache.shardingsphere.sql.parser.core.SQLParseKernel;
 import org.apache.shardingsphere.sql.parser.core.rule.registry.ParseRuleRegistry;
 import org.apache.shardingsphere.sql.parser.hook.ParsingHook;
 import org.apache.shardingsphere.sql.parser.hook.SPIParsingHook;
+import org.apache.shardingsphere.sql.parser.hook.SuiParsingHook;
+import org.apache.shardingsphere.sql.parser.hook.SuiSPIParsingHook;
 import org.apache.shardingsphere.sql.parser.sql.statement.SQLStatement;
 
 /**
@@ -33,15 +35,15 @@ import org.apache.shardingsphere.sql.parser.sql.statement.SQLStatement;
  */
 @RequiredArgsConstructor
 public final class SQLParseEngine {
-    
+
     private final String databaseTypeName;
-    
+
     private final SQLParseResultCache cache = new SQLParseResultCache();
-    
+
     /**
      * Parse SQL.
      *
-     * @param sql SQL
+     * @param sql      SQL
      * @param useCache use cache or not
      * @return SQL statement
      */
@@ -59,7 +61,7 @@ public final class SQLParseEngine {
             throw ex;
         }
     }
-    
+
     private SQLStatement parse0(final String sql, final boolean useCache) {
         if (useCache) {
             Optional<SQLStatement> cachedSQLStatement = cache.getSQLStatement(sql);
@@ -67,7 +69,10 @@ public final class SQLParseEngine {
                 return cachedSQLStatement.get();
             }
         }
+        SuiParsingHook suiParsingHook = new SuiSPIParsingHook();
+        suiParsingHook.start(sql, useCache);
         SQLStatement result = new SQLParseKernel(ParseRuleRegistry.getInstance(), databaseTypeName, sql).parse();
+        suiParsingHook.finishSuccess(result, useCache);
         if (useCache) {
             cache.put(sql, result);
         }

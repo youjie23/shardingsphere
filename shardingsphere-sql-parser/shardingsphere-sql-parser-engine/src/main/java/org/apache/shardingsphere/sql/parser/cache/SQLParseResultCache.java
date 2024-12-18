@@ -29,19 +29,34 @@ import org.apache.shardingsphere.sql.parser.sql.statement.SQLStatement;
  * @author zhaojun
  */
 public final class SQLParseResultCache {
-    
-    private final Cache<String, SQLStatement> cache = CacheBuilder.newBuilder().softValues().initialCapacity(2000).maximumSize(65535).build();
-    
+
+    private static final Cache<String, SQLStatement> CACHE;
+
+    private static final int INITSIZE = Integer.valueOf(System.getProperty("sharding.sql.parsing.cache.size.init",
+            "2000"));
+
+    private static final int MAXSIZE = Integer.valueOf(System.getProperty("sharding.sql.parsing.cache.size.max",
+            "65535"));
+
+    static {
+        if ("true".equals(System.getProperty("sharding.sql.parsing.cache.soft", "true"))) {
+            CACHE = CacheBuilder.newBuilder().softValues().recordStats().initialCapacity(INITSIZE).maximumSize(MAXSIZE).build();
+        } else {
+            CACHE = CacheBuilder.newBuilder().recordStats().initialCapacity(INITSIZE).maximumSize(MAXSIZE).build();
+        }
+    }
+
+
     /**
      * Put SQL and parse result into cache.
-     * 
-     * @param sql SQL
+     *
+     * @param sql          SQL
      * @param sqlStatement SQL statement
      */
     public void put(final String sql, final SQLStatement sqlStatement) {
-        cache.put(sql, sqlStatement);
+        CACHE.put(sql, sqlStatement);
     }
-    
+
     /**
      * Get SQL statement.
      *
@@ -49,13 +64,13 @@ public final class SQLParseResultCache {
      * @return SQL statement
      */
     public Optional<SQLStatement> getSQLStatement(final String sql) {
-        return Optional.fromNullable(cache.getIfPresent(sql));
+        return Optional.fromNullable(CACHE.getIfPresent(sql));
     }
-    
+
     /**
      * Clear cache.
      */
     public synchronized void clear() {
-        cache.invalidateAll();
+        CACHE.invalidateAll();
     }
 }
